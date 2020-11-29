@@ -8,7 +8,8 @@ ref3: "<" text ":" text ":" text ">"
 
 attr: text "=" value ";"
 
-obj: text ":" text ":" text "{" attr* "}"
+speci: text ":" text ":" text
+obj: speci "{" attr* "}"
 list: "(" value ("," value)* ")"
 
 ?value: attr
