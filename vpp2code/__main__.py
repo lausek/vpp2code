@@ -17,8 +17,6 @@ DIAGRAM = 'DIAGRAM'
 DIAGRAM_ELEMENT = 'DIAGRAM_ELEMENT'
 MODEL_ELEMENT = 'MODEL_ELEMENT'
 
-JAVA_ENTITIES = ['Class']
-
 def generate(model_items, target, package):
     package_path = Path(target, package.replace('.', '/'))
     package_path.mkdir(parents=True, exist_ok=True)
@@ -44,8 +42,6 @@ def main():
         diagram_id = row[0]
         print(">>> generating", diagram_id)
 
-        #print(get_model_element(con, 'XVC4Zq6GAqFkFRPc'))
-
         elements = db.get_class_diagram_elements(diagram_id)
 
         for element in elements:
@@ -66,10 +62,9 @@ def main():
                 else:
                     print(mobj.end.name(), '->', mobj.start.name())
                     items[mobj.end.mid()].set_parent(mobj.start.name())
-                #print(items[mobj.start], '->', items[mobj.end])
-                #print(mid, mty, mdef)
 
     generate(items, target_dir, package)
+
 
 if __name__ == '__main__':
     main()

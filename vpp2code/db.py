@@ -8,6 +8,7 @@ class Database:
         self.con = sqlite3.connect(path)
         self.defparser = lark.Lark.open(Path(__file__).parent / 'defgrammar.lark')
 
+
     def to_py(self, tree):
         if isinstance(tree, lark.Token):
             return str(tree)
@@ -36,7 +37,7 @@ class Database:
 
         if tree.data == 'speci':
             a, b, c = tree.children
-            return (self.to_py(a), self.to_py(b), self.to_py(c))
+            return (ModelRef(self, [a]), self.to_py(b), self.to_py(c))
 
         assert False
 
@@ -107,6 +108,7 @@ class Database:
         )
         return ((row[0], row[1], row[2], self.to_def(row[3])) for row in cur.fetchall())
 
+
     def get_model_element(self, model_id):
         cur = self.con.cursor()
         # using sqlite variable interpolation `?` delivers nothing...
@@ -119,7 +121,6 @@ class Database:
             """
             .format(model_id)
         )
-        print(model_id)
         row = cur.fetchone()
         if not row is None:
             return (row[0], row[1], row[2], self.to_def(row[3]))
@@ -128,9 +129,10 @@ class Database:
 class ModelObject:
     def __init__(self, speci, attrs):
         self.id = speci[0]
-        self.what = speci[1]
+        self.name = speci[1][1:-1]
         self.ty = speci[2]
         self.attrs = attrs
+
 
     def get(self, name, padfn=None):
         if not name in self.attrs:
@@ -138,6 +140,7 @@ class ModelObject:
         if not padfn is None:
             return padfn(self.attrs[name])
         return self.attrs[name]
+
 
     def __repr__(self):
         return '{}:{}({})'.format(self.id, self.ty, self.attrs)
@@ -148,11 +151,13 @@ class ModelRef:
         self.db = db
         self.ids = ids
 
+
     def mid(self):
         return self.ids[-1]
 
+
     def name(self):
-        nid = self.ids[-1]
-        row = self.db.get_model_element(nid)
+        mid = self.mid()
+        row = self.db.get_model_element(mid)
         if not row is None:
             return row[2]
