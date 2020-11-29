@@ -1,0 +1,23 @@
+start: obj
+
+?text: /[A-Za-z0-9\-\._\"\$@]+/ | /".*"/
+
+ref: "<" text ">"
+ref2: "<" text ":" text ">"
+ref3: "<" text ":" text ":" text ">"
+
+attr: text "=" value ";"
+
+obj: text ":" text ":" text "{" attr* "}"
+list: "(" value ("," value)* ")"
+
+?value: attr
+    | text
+    | ref
+    | ref2
+    | ref3
+    | "{" obj "}"
+    | list
+
+%import common.WS
+%ignore WS

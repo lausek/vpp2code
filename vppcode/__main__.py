@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 
+import lark
 import os
 import os.path
 import sqlite3
+
+from pathlib import Path
 
 from vp import parse
 
@@ -12,15 +15,16 @@ MODEL_ELEMENT = 'MODEL_ELEMENT'
 
 JAVA_ENTITIES = ['Class']
 
+defparser = lark.Lark.open(Path(__file__).parent / 'defgrammar.lark')
+
 def to_definition(b):
-    """
-    import json
-    odd_vpp_format = b.decode('utf-8')
-    odd_vpp_format.replace(';\r\n', ',')
-    return json.loads(odd_vpp_format)
-    """
     if not b is None:
-        return b.decode('utf-8')
+        src = b.decode('utf-8')
+
+        parsesrc = src.replace('\t', '')
+        print(defparser.parse(parsesrc))
+
+        return src
 
 
 def get_class_diagrams(con):
@@ -91,9 +95,7 @@ def get_model_element(con, model_id):
 
 
 def generate(model_items, target, package):
-    import pathlib
-
-    package_path = pathlib.Path(target, package.replace('.', '/'))
+    package_path = Path(target, package.replace('.', '/'))
     package_path.mkdir(parents=True, exist_ok=True)
 
     for mid, mobj in model_items.items():
