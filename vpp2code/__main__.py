@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import os
 import os.path
 
@@ -30,11 +31,7 @@ def generate(model_items, target, package):
             fout.write(src)
 
 
-def main():
-    current_dir = os.getcwd()
-    target_dir = os.path.join(current_dir, 'src')
-    db_path = 'diagram.vpp'
-    package = 'com.vppcode'
+def read(db_path, package):
     items = {}
 
     db = Database(db_path)
@@ -63,7 +60,22 @@ def main():
                     print(mobj.end.name(), '->', mobj.start.name())
                     items[mobj.end.mid()].set_parent(mobj.start.name())
 
-    generate(items, target_dir, package)
+    return items
+
+
+def main():
+    current_dir = os.getcwd()
+    default_target_dir = os.path.join(current_dir, 'src')
+
+    parser = argparse.ArgumentParser(description='convert visual paradigm diagrams to java code')
+    parser.add_argument('diagram', metavar='DIAGRAM', type=str, help='path to the vp diagram file')
+    parser.add_argument('--package', type=str, default='com.vpp2code', help='java package name to use as base')
+    parser.add_argument('--target', type=str, default=default_target_dir, help='location for the resulting java code')
+
+    args = parser.parse_args()
+
+    items = read(args.diagram, args.package)
+    generate(items, args.target, args.package)
 
 
 if __name__ == '__main__':
