@@ -2,17 +2,16 @@
 
 import os
 import os.path
-import sqlite3
 
 from pathlib import Path
 
 try:
-    from .query import *
-    from .vp import parse
+    from .db import *
+    from .vp import *
 
 except ImportError:
-    from query import *
-    from vp import parse
+    from db import *
+    from vp import *
 
 DIAGRAM = 'DIAGRAM'
 DIAGRAM_ELEMENT = 'DIAGRAM_ELEMENT'
@@ -36,29 +35,39 @@ def generate(model_items, target, package):
 def main():
     current_dir = os.getcwd()
     target_dir = os.path.join(current_dir, 'src')
+    db_path = 'diagram.vpp'
     package = 'com.vppcode'
     items = {}
 
-    with sqlite3.connect('diagram.vpp') as con:
-        for row in get_class_diagrams(con):
-            diagram_id = row[0]
-            print(">>> generating", diagram_id)
+    db = Database(db_path)
+    for row in db.get_class_diagrams():
+        diagram_id = row[0]
+        print(">>> generating", diagram_id)
 
-            elements = get_class_diagram_elements(con, diagram_id)
+        #print(get_model_element(con, 'XVC4Zq6GAqFkFRPc'))
 
-            for element in elements:
-                # element
-                ety, edef, model_id = element
+        elements = db.get_class_diagram_elements(diagram_id)
 
-                # classes
-                for mid, mname, mdef in get_classes(con, model_id):
-                    mobj = parse(mdef, mname, package)
-                    items[mid] = mobj
+        for element in elements:
+            # element
+            ety, edef, model_id = element
 
-                # connections: association, generalization
-                for mid, mty, mname, mdef in get_connections(con, model_id):
-                    mobj = parse(mdef, mname, package)
-                    #print(mid, mty, mdef)
+            # classes
+            for mid, mname, mdef in db.get_classes(model_id):
+                mobj = parse(mdef, mname, package)
+                items[mid] = mobj
+
+            # connections: association, generalization
+            for mid, mty, mname, mdef in db.get_connections(model_id):
+                mobj = parse(mdef, mname, package)
+                
+                if isinstance(mobj, VpAssociation):
+                    pass
+                else:
+                    print(mobj.end.name(), '->', mobj.start.name())
+                    items[mobj.end.mid()].set_parent(mobj.start.name())
+                #print(items[mobj.start], '->', items[mobj.end])
+                #print(mid, mty, mdef)
 
     generate(items, target_dir, package)
 

@@ -1,7 +1,3 @@
-def split_id(t):
-    return VpId(t.split(':')[0])
-
-
 def unquote(t):
     return t.strip()[1:-1]
 
@@ -11,13 +7,13 @@ def parse(mdef, mname=None, package=None):
         return parse_class(mdef, mname, package)
 
     if mdef.ty == 'Association':
-        start = mdef.get('fromModel', split_id)
-        end = mdef.get('toModel', split_id)
+        start = mdef.get('from')
+        end = mdef.get('to')
         return VpAssociation(start, end)
 
     if mdef.ty == 'Generalization':
-        start = mdef.get('fromModel', split_id)
-        end = mdef.get('toModel', split_id)
+        start = mdef.get('fromModel')
+        end = mdef.get('toModel')
         return VpGeneralization(start, end)
 
     print(mdef.ty)
@@ -30,18 +26,16 @@ def parse_class(mdef, mname=None, package=None):
     if not child is None:
         for item in child:
             if item.ty == 'Attribute':
-                vis = item.get('visibility', split_id)
-                init_val = item.get('initialValue', split_id)
-                ty = item.get('type', split_id)
+                vis = item.get('visibility')
+                init_val = item.get('initialValue')
+                ty = item.get('type')
                 if ty is None:
                     ty = item.get('type_string', unquote)
 
-                print(item)
-                assert False
                 print(vis, ty, init_val)
 
             if item.ty == 'Operation':
-                vis = item.get('visibility', split_id)
+                vis = item.get('visibility')
 
                 params = item.get('Child')
                 if params:
@@ -67,6 +61,9 @@ class VpClass:
 
     def get_file_name(self):
         return '{}.java'.format(self.name)
+
+    def set_parent(self, parent):
+        self.parent = parent
 
     def generate(self):
         src = ''
@@ -97,14 +94,15 @@ class VpClass:
 
 
 class VpAssociation:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+
+class VpGeneralization:
     def __init__(self, start, end):
         self.start = start
         self.end = end
-
-
-class VpGeneralization(VpAssociation):
-    def __init__(self, start, end):
-        super().__init__(start, end)
 
 
 class VpAttribute:
@@ -113,7 +111,3 @@ class VpAttribute:
 
 class VpOperation:
     pass
-
-class VpId:
-    def __init__(self, idx):
-        self.id = idx
