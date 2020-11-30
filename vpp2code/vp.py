@@ -40,12 +40,15 @@ def parse_class(mdef, mname=None, package=None):
     tend = mdef.get('FromEndRelationships')
     if tend:
         for end in tend:
+            kind = end.cls().get('from').get('aggregationKind')
+
             end = end.cls().get('to')
             ty = end.get('type').name()
             mul = end.get('multiplicity', VpMultiplicity)
 
             attr = VpAttribute(name=to_attr_name(ty), ty=ty)
             attr.mul = mul
+            attr.kind = VpAggregationKind(kind)
             obj.attributes.append(attr)
 
     # check attributes and operations
@@ -96,10 +99,13 @@ def map_visibility(vis):
     if vis is None:
         return ''
     vis = int(vis.lower())
+
     if vis == 71:
         return VIS_PUBLIC
+
     if vis == 67:
         return VIS_PROTECTED
+
     print(vis)
     assert False
 
@@ -159,15 +165,17 @@ class VpClass:
                 src += '\t{}\n'.format(attr.generate())
 
         # constructor
-        init_args = []
-        if self.attributes:
-            init_args = [(attr.get_ty(), attr.name) for attr in self.attributes if attr.is_uninitialized()]
+        init_args = [(attr.get_ty(), attr.name) for attr in self.attributes if attr.is_uninitialized()]
 
         src += '\n'
         src += '\t{} {}({}) {{\n'.format(VIS_PUBLIC, self.name, ', '.join(map(lambda t: '%s %s' % t, init_args)))
         for _, init_arg_name in init_args:
             src += '\t\tthis.{n} = {n};\n'.format(n=init_arg_name)
-        src += '}\n'
+
+        for own_attr in filter(lambda a: not a.kind.is_plain_association(), self.attributes):
+            src += '\t\tthis.{} = {};\n'.format(own_attr.name, own_attr.get_init())
+
+        src += '\t}\n'
 
         # operations
         if self.operations:
@@ -198,15 +206,17 @@ class VpGeneralization:
 
 
 class VpAttribute:
-    def __init__(self, vis=None, name=None, ty=None, init=None, mul=None):
+    def __init__(self, vis=None, name=None, ty=None, init=None, mul=None, kind=None):
         self.vis = vis
         self.name = name
         self.ty = ty
         self.init = init
         self.mul = mul
 
+        self.kind = VpAggregationKind(None) if kind is None else kind
+
     def is_uninitialized(self):
-        return self.get_vis() == VIS_PRIVATE and self.get_init() is None
+        return self.get_vis() == VIS_PRIVATE and self.get_init() is None and self.kind.is_plain_association()
 
     def get_ty_name(self):
         return self.ty if isinstance(self.ty, str) else self.ty.name()
@@ -214,12 +224,11 @@ class VpAttribute:
     def get_init(self):
         if self.init is not None:
             return self.init.name()
-        if self.mul is not None:
-            if self.mul.max == 1:
-                return # 'null'
+        if self.mul is not None and self.mul.max != 1:
             if self.mul.max == '*':
                 return 'new ArrayList<>()'
             return 'new {}[{}]'.format(self.get_ty_name(), self.mul.max)
+        return 'new {}()'.format(self.get_ty_name())
 
     def get_ty(self):
         if self.ty is None:
@@ -233,15 +242,11 @@ class VpAttribute:
 
     def get_vis(self):
         if self.vis is None:
-            assert self.name != 'Record'
             return VIS_PRIVATE
         return map_visibility(self.vis)
 
     def generate(self):
-        vis = self.get_vis()
-        name, ty, init = self.name, self.get_ty(), self.get_init()
-        if init:
-            return "{} {} {} = {};".format(vis, ty, name, init)
+        vis, name, ty = self.get_vis(), self.name, self.get_ty()
         return "{} {} {};".format(vis, ty, name)
 
 
@@ -277,3 +282,14 @@ class VpMultiplicity:
             self.max = int(high) if high != '*' else high
         else:
             self.max = int(raw)
+
+# the aggregation is either:
+# None -> association
+# 66 -> aggregation
+# 67 -> composition
+class VpAggregationKind:
+    def __init__(self, raw):
+        self.kind = raw
+
+    def is_plain_association(self):
+        return self.kind is None
