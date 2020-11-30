@@ -1,3 +1,7 @@
+VIS_PUBLIC = 'public'
+VIS_PRIVATE = 'private'
+VIS_PROTECTED = 'protected'
+
 def unquote(t):
     return t.strip()[1:-1]
 
@@ -38,10 +42,10 @@ def parse_class(mdef, mname=None, package=None):
         for end in tend:
             end = end.cls().get('to')
             ty = end.get('type').name()
-            mul = end.get('multiplicity')
-            init = None
+            mul = end.get('multiplicity', VpMultiplicity)
 
-            attr = VpAttribute(name=to_attr_name(ty), ty=ty, init=init)
+            attr = VpAttribute(name=to_attr_name(ty), ty=ty)
+            attr.mul = mul
             obj.attributes.append(attr)
 
     # check attributes and operations
@@ -49,15 +53,16 @@ def parse_class(mdef, mname=None, package=None):
     if child is not None:
         for item in child:
             if item.ty == 'Attribute':
-                attr = VpAttribute()
-                attr.name = item.name
-                attr.vis = item.get('visibility')
-                attr.init = item.get('initialValue')
-                attr.ty = item.get('type')
-                if attr.ty is None:
-                    attr.ty = item.get('type_string', unquote)
+                name = item.name
+                vis = item.get('visibility')
+                init = item.get('initialValue')
+                ty = item.get('type')
+                if ty is None:
+                    ty = item.get('type_string', unquote)
 
-                obj.attributes.append(attr)
+                mul = item.get('multiplicity', VpMultiplicity)
+
+                obj.attributes.append(VpAttribute(vis, name, ty, init, mul))
 
             if item.ty == 'Operation':
                 op = VpOperation()
@@ -92,9 +97,9 @@ def map_visibility(vis):
         return ''
     vis = int(vis.lower())
     if vis == 71:
-        return 'public'
+        return VIS_PUBLIC
     if vis == 67:
-        return 'protected'
+        return VIS_PROTECTED
     print(vis)
     assert False
 
@@ -104,6 +109,7 @@ class VpClass:
         self.name = name.strip()
         self.package = package
 
+        self.vis = VIS_PUBLIC
         self.parent = None
         self.abstract = False
         self.interfaces = []
@@ -134,9 +140,9 @@ class VpClass:
         src += '\n'
 
         if self.abstract:
-            src += 'public abstract class {}'.format(self.name)
+            src += '{} abstract class {}'.format(self.vis, self.name)
         else:
-            src += 'public class {}'.format(self.name)
+            src += '{} class {}'.format(self.vis, self.name)
 
         if self.parent is not None:
             src += ' extends {}'.format(self.parent)
@@ -155,11 +161,13 @@ class VpClass:
         # constructor
         init_args = []
         if self.attributes:
-            init_args = ['{} {}'.format(attr.get_ty(), attr.name) for attr in self.attributes if
-                         attr.get_vis() == 'private']
+            init_args = [(attr.get_ty(), attr.name) for attr in self.attributes if attr.is_uninitialized()]
 
         src += '\n'
-        src += '\tpublic {}({}) {{}}\n'.format(self.name, ', '.join(init_args))
+        src += '\t{} {}({}) {{\n'.format(VIS_PUBLIC, self.name, ', '.join(map(lambda t: '%s %s' % t, init_args)))
+        for _, init_arg_name in init_args:
+            src += '\t\tthis.{n} = {n};\n'.format(n=init_arg_name)
+        src += '}\n'
 
         # operations
         if self.operations:
@@ -177,7 +185,7 @@ class VpEnum(VpClass):
         src = ''
         src += 'package {};\n'.format(self.package)
         src += '\n'
-        src += 'public enum {} {{\n'.format(self.name)
+        src += '{} enum {} {{\n'.format(self.vis, self.name)
         src += ',\n'.join(map(lambda a: '\t' + a.name, self.attributes))
         src += '\n}\n'
         return src
@@ -190,27 +198,43 @@ class VpGeneralization:
 
 
 class VpAttribute:
-    def __init__(self, vis=None, name=None, ty=None, init=None):
+    def __init__(self, vis=None, name=None, ty=None, init=None, mul=None):
         self.vis = vis
         self.name = name
         self.ty = ty
         self.init = init
+        self.mul = mul
+
+    def is_uninitialized(self):
+        return self.get_vis() == VIS_PRIVATE and self.get_init() is None
+
+    def get_ty_name(self):
+        return self.ty if isinstance(self.ty, str) else self.ty.name()
 
     def get_init(self):
         if self.init is not None:
             return self.init.name()
+        if self.mul is not None:
+            if self.mul.max == 1:
+                return # 'null'
+            if self.mul.max == '*':
+                return 'new ArrayList<>()'
+            return 'new {}[{}]'.format(self.get_ty_name(), self.mul.max)
 
     def get_ty(self):
         if self.ty is None:
             return ''
-        if isinstance(self.ty, str):
-            return self.ty
-        return self.ty.name()
+        tys = self.get_ty_name()
+        if self.mul is not None and self.mul.max != 1:
+            if self.mul.max == '*':
+                return 'List<{}>'.format(tys)
+            return '{}[]'.format(tys)
+        return tys
 
     def get_vis(self):
         if self.vis is None:
             assert self.name != 'Record'
-            return 'private'
+            return VIS_PRIVATE
         return map_visibility(self.vis)
 
     def generate(self):
@@ -230,10 +254,26 @@ class VpOperation:
 
     def get_vis(self):
         if self.vis is None:
-            return 'public'
+            return VIS_PUBLIC
         return map_visibility(self.vis)
 
     def generate(self):
         vis, name, ret = self.get_vis(), self.name, map_type(self.ret)
         params = ', '.join(map(lambda p: '{} {}'.format(p[1].name(), p[0]), self.params))
         return "{} {} {}({}) {{}}".format(vis, ret, name, params)
+
+
+class VpMultiplicity:
+    def __init__(self, raw):
+        self.min = None
+        self.max = None
+
+        if raw.startswith('"') and raw.endswith('"'):
+            raw = unquote(raw)
+
+        if '..' in raw:
+            low, high = raw.split('..')
+            self.min = int(low)
+            self.max = int(high) if high != '*' else high
+        else:
+            self.max = int(raw)
