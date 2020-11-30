@@ -36,13 +36,28 @@ def parse_class(mdef, mname=None, package=None):
     if is_abstract is not None:
         obj.abstract = True
 
-    # check associations
+    # check associations that have the current node as starting point
     tend = mdef.get('FromEndRelationships')
     if tend:
         for end in tend:
             kind = end.cls().get('from').get('aggregationKind')
 
             end = end.cls().get('to')
+            ty = end.get('type').name()
+            mul = end.get('multiplicity', VpMultiplicity)
+
+            attr = VpAttribute(name=to_attr_name(ty), ty=ty)
+            attr.mul = mul
+            attr.kind = VpAggregationKind(kind)
+            obj.attributes.append(attr)
+
+    # check associations that have the current node as end point
+    tend = mdef.get('ToEndRelationships')
+    if tend:
+        for end in tend:
+            kind = end.cls().get('to').get('aggregationKind')
+
+            end = end.cls().get('from')
             ty = end.get('type').name()
             mul = end.get('multiplicity', VpMultiplicity)
 
