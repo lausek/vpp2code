@@ -144,7 +144,13 @@ class VpClass:
             for attr in self.attributes:
                 src += '\t{}\n'.format(attr.generate())
 
-        # TODO: constructor
+        # constructor
+        init_args = []
+        if self.attributes:
+            init_args = ['{} {}'.format(attr.get_ty(), attr.name) for attr in self.attributes if attr.get_vis() == 'private']
+
+        src += '\n'
+        src += '\tpublic {}({}) {{}}\n'.format(self.name, ', '.join(init_args))
 
         # operations
         if self.operations:
