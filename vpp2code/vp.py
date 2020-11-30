@@ -21,7 +21,15 @@ def parse(mdef, mname=None, package=None):
 
 
 def parse_class(mdef, mname=None, package=None):
-    obj = VpClass(mname, package)
+    stereotypes = mdef.get('stereotypes', lambda sts: list(map(lambda s: s.name(), sts)))
+    if not stereotypes is None and 'enumeration' in stereotypes:
+        obj = VpEnum(mname, package)
+    else:
+        obj = VpClass(mname, package)
+
+    is_abstract = mdef.get('abstract')
+    if not is_abstract is None:
+        obj.abstract = True
 
     child = mdef.get('Child')
     if not child is None:
@@ -61,12 +69,31 @@ def parse_class(mdef, mname=None, package=None):
     return obj
 
 
+def map_type(ty):
+    if ty is None:
+        return 'void'
+    return ty
+
+
+def map_visibility(vis):
+    if vis is None:
+        return ''
+    vis = int(vis.lower())
+    if vis == 71:
+        return 'public'
+    if vis == 67:
+        return 'protected'
+    print(vis)
+    assert False
+
+
 class VpClass:
     def __init__(self, name, package):
-        self.name = name
+        self.name = name.strip()
         self.package = package
 
         self.parent = None
+        self.abstract = False
         self.interfaces = []
         self.dependencies = []
 
@@ -89,11 +116,19 @@ class VpClass:
     def generate(self):
         src = ''
 
-        if self.dependencies:
-            for dependency in self.dependencies:
-                src += "import {};\n".format(dependency.get_package_path())
+        src += 'package {};\n'.format(self.package);
 
-        src += 'public class {}'.format(self.name)
+        if self.dependencies:
+            src += '\n'
+            for dependency in self.dependencies:
+                src += 'import {};\n'.format(dependency.get_package_path())
+
+        src += '\n';
+
+        if self.abstract:
+            src += 'public abstract class {}'.format(self.name)
+        else:
+            src += 'public class {}'.format(self.name)
 
         if not self.parent is None:
             src += ' extends {}'.format(self.parent)
@@ -101,43 +136,36 @@ class VpClass:
         if self.interfaces:
             src += ' implements {}'.format(', '.join(self.interfaces))
 
-        src += " {\n"
+        src += ' {\n'
 
         # attributes
         if self.attributes:
-            src += "\n"
+            src += '\n'
             for attr in self.attributes:
-                src += "\t{}\n".format(attr.generate())
+                src += '\t{}\n'.format(attr.generate())
 
         # TODO: constructor
 
         # operations
         if self.operations:
-            src += "\n"
+            src += '\n'
             for op in self.operations:
-                src += "\t{}\n".format(op.generate())
+                src += '\t{}\n'.format(op.generate())
 
-        src += "}\n"
+        src += '}\n'
 
         return src
 
 
-def map_type(ty):
-    if ty is None:
-        return 'void'
-    return ty
-
-
-def map_visibility(vis):
-    if vis is None:
-        return ''
-    vis = int(vis.lower())
-    if vis == 71:
-        return 'public'
-    if vis == 67:
-        return 'private'
-    print(vis)
-    assert False
+class VpEnum(VpClass):
+    def generate(self):
+        src = ''
+        src += 'package {};\n'.format(self.package);
+        src += '\n'
+        src += 'public enum {} {{\n'.format(self.name)
+        src += ',\n'.join(map(lambda a: '\t' + a.name, self.attributes))
+        src += '\n}\n'
+        return src
 
 
 class VpAssociation:
@@ -174,6 +202,9 @@ class VpAttribute:
 
 
     def get_vis(self):
+        if self.vis is None:
+            assert self.name != 'Record'
+            return 'private'
         return map_visibility(self.vis)
 
 
@@ -194,6 +225,8 @@ class VpOperation:
 
 
     def get_vis(self):
+        if self.vis is None:
+            return 'public'
         return map_visibility(self.vis)
 
 
