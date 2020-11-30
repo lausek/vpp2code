@@ -67,7 +67,10 @@ def parse_class(mdef, mname=None, package=None):
 
                 obj.attributes.append(VpAttribute(vis, name, ty, init, mul))
 
-            if item.ty == 'Operation':
+            elif item.ty == 'EnumerationLiteral':
+                obj.attributes.append(VpAttribute(name=item.name))
+
+            elif item.ty == 'Operation':
                 op = VpOperation()
 
                 op.name = item.name
