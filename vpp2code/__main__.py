@@ -4,8 +4,6 @@ import argparse
 import os
 import os.path
 
-from pathlib import Path
-
 try:
     from .db import *
     from .vp import *
@@ -17,6 +15,7 @@ except ImportError:
 DIAGRAM = 'DIAGRAM'
 DIAGRAM_ELEMENT = 'DIAGRAM_ELEMENT'
 MODEL_ELEMENT = 'MODEL_ELEMENT'
+
 
 def generate(model_items, target, package):
     package_path = Path(target, package.replace('.', '/'))
@@ -50,15 +49,12 @@ def read(db_path, package):
                 mobj = parse(mdef, mname, package)
                 items[mid] = mobj
 
-            # connections: association, generalization
+            # connections: generalization
             for mid, mty, mname, mdef in db.get_connections(model_id):
                 mobj = parse(mdef, mname, package)
                 
-                if isinstance(mobj, VpAssociation):
-                    pass
-                else:
-                    print(mobj.end.name(), '->', mobj.start.name())
-                    items[mobj.end.mid()].set_parent(mobj.start.name())
+                print(mobj.end.name(), '->', mobj.start.name())
+                items[mobj.end.mid()].set_parent(mobj.start.name())
 
     return items
 

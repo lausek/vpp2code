@@ -2,14 +2,13 @@ def unquote(t):
     return t.strip()[1:-1]
 
 
+def to_attr_name(t):
+    return t[0].lower() + t[1:]
+
+
 def parse(mdef, mname=None, package=None):
     if mdef.ty == 'Class':
         return parse_class(mdef, mname, package)
-
-    if mdef.ty == 'Association':
-        start = mdef.get('from')
-        end = mdef.get('to')
-        return VpAssociation(start, end)
 
     if mdef.ty == 'Generalization':
         start = mdef.get('fromModel')
@@ -21,18 +20,33 @@ def parse(mdef, mname=None, package=None):
 
 
 def parse_class(mdef, mname=None, package=None):
+    # check stereotypes: enumeration, interface (?)
     stereotypes = mdef.get('stereotypes', lambda sts: list(map(lambda s: s.name(), sts)))
-    if not stereotypes is None and 'enumeration' in stereotypes:
+    if stereotypes is not None and 'enumeration' in stereotypes:
         obj = VpEnum(mname, package)
     else:
         obj = VpClass(mname, package)
 
+    # check if class is abstract
     is_abstract = mdef.get('abstract')
-    if not is_abstract is None:
+    if is_abstract is not None:
         obj.abstract = True
 
+    # check associations
+    tend = mdef.get('FromEndRelationships')
+    if tend:
+        for end in tend:
+            end = end.cls().get('to')
+            ty = end.get('type').name()
+            mul = end.get('multiplicity')
+            init = None
+
+            attr = VpAttribute(name=to_attr_name(ty), ty=ty, init=init)
+            obj.attributes.append(attr)
+
+    # check attributes and operations
     child = mdef.get('Child')
-    if not child is None:
+    if child is not None:
         for item in child:
             if item.ty == 'Attribute':
                 attr = VpAttribute()
@@ -52,18 +66,16 @@ def parse_class(mdef, mname=None, package=None):
                 op.vis = item.get('visibility')
 
                 def create_param(param):
-                    param.name
-
                     ty = param.get('type')
                     if ty is None:
                         ty = item.get('type_string', unquote)
 
-                    return (param.name, ty)
+                    return param.name, ty
 
                 params = item.get('Child')
                 if params:
                     op.params = list(map(create_param, params))
-                
+
                 obj.operations.append(op)
 
     return obj
@@ -100,37 +112,33 @@ class VpClass:
         self.attributes = []
         self.operations = []
 
-
     def get_package_path(self):
-        return '.'.join([package, self.name])
-
+        return '.'.join([self.package, self.name])
 
     def get_file_name(self):
         return '{}.java'.format(self.name)
 
-
     def set_parent(self, parent):
         self.parent = parent
-
 
     def generate(self):
         src = ''
 
-        src += 'package {};\n'.format(self.package);
+        src += 'package {};\n'.format(self.package)
 
         if self.dependencies:
             src += '\n'
             for dependency in self.dependencies:
                 src += 'import {};\n'.format(dependency.get_package_path())
 
-        src += '\n';
+        src += '\n'
 
         if self.abstract:
             src += 'public abstract class {}'.format(self.name)
         else:
             src += 'public class {}'.format(self.name)
 
-        if not self.parent is None:
+        if self.parent is not None:
             src += ' extends {}'.format(self.parent)
 
         if self.interfaces:
@@ -147,7 +155,8 @@ class VpClass:
         # constructor
         init_args = []
         if self.attributes:
-            init_args = ['{} {}'.format(attr.get_ty(), attr.name) for attr in self.attributes if attr.get_vis() == 'private']
+            init_args = ['{} {}'.format(attr.get_ty(), attr.name) for attr in self.attributes if
+                         attr.get_vis() == 'private']
 
         src += '\n'
         src += '\tpublic {}({}) {{}}\n'.format(self.name, ', '.join(init_args))
@@ -166,18 +175,12 @@ class VpClass:
 class VpEnum(VpClass):
     def generate(self):
         src = ''
-        src += 'package {};\n'.format(self.package);
+        src += 'package {};\n'.format(self.package)
         src += '\n'
         src += 'public enum {} {{\n'.format(self.name)
         src += ',\n'.join(map(lambda a: '\t' + a.name, self.attributes))
         src += '\n}\n'
         return src
-
-
-class VpAssociation:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
 
 
 class VpGeneralization:
@@ -193,11 +196,9 @@ class VpAttribute:
         self.ty = ty
         self.init = init
 
-
     def get_init(self):
-        if not self.init is None:
+        if self.init is not None:
             return self.init.name()
-
 
     def get_ty(self):
         if self.ty is None:
@@ -206,20 +207,18 @@ class VpAttribute:
             return self.ty
         return self.ty.name()
 
-
     def get_vis(self):
         if self.vis is None:
             assert self.name != 'Record'
             return 'private'
         return map_visibility(self.vis)
 
-
     def generate(self):
         vis = self.get_vis()
         name, ty, init = self.name, self.get_ty(), self.get_init()
         if init:
-            return "{} {} {} = {};".format(vis, ty, name, init);
-        return "{} {} {};".format(vis, ty, name);
+            return "{} {} {} = {};".format(vis, ty, name, init)
+        return "{} {} {};".format(vis, ty, name)
 
 
 class VpOperation:
@@ -229,14 +228,12 @@ class VpOperation:
         self.ret = ret
         self.params = []
 
-
     def get_vis(self):
         if self.vis is None:
             return 'public'
         return map_visibility(self.vis)
 
-
     def generate(self):
         vis, name, ret = self.get_vis(), self.name, map_type(self.ret)
         params = ', '.join(map(lambda p: '{} {}'.format(p[1].name(), p[0]), self.params))
-        return "{} {} {}({}) {{}}".format(vis, ret, name, params);
+        return "{} {} {}({}) {{}}".format(vis, ret, name, params)
