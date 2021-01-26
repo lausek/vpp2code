@@ -10,85 +10,6 @@ def to_attr_name(t):
     return t[0].lower() + t[1:]
 
 
-def parse(mdef, mname=None, package=None):
-    if mdef.ty == 'Class':
-        return parse_class(mdef, mname, package)
-
-    if mdef.ty == 'Generalization':
-        start = mdef.get('fromModel')
-        end = mdef.get('toModel')
-        return VpGeneralization(start, end)
-
-    print(mdef.ty)
-    assert False
-
-
-def parse_class(mdef, mname=None, package=None):
-    # check stereotypes: enumeration, interface (?)
-    stereotypes = mdef.get('stereotypes', lambda sts: list(map(lambda s: s.name(), sts)))
-    if stereotypes is not None and 'enumeration' in stereotypes:
-        obj = VpEnum(mname, package)
-    else:
-        obj = VpClass(mname, package)
-
-    # check if class is abstract
-    is_abstract = mdef.get('abstract')
-    if is_abstract is not None:
-        obj.abstract = True
-
-    # check associations
-    tend = mdef.get('FromEndRelationships')
-    if tend:
-        for end in tend:
-            kind = end.cls().get('from').get('aggregationKind')
-
-            end = end.cls().get('to')
-            ty = end.get('type').name()
-            mul = end.get('multiplicity', VpMultiplicity)
-
-            attr = VpAttribute(name=to_attr_name(ty), ty=ty)
-            attr.mul = mul
-            attr.kind = VpAggregationKind(kind)
-            obj.attributes.append(attr)
-
-    # check attributes and operations
-    child = mdef.get('Child')
-    if child is not None:
-        for item in child:
-            if item.ty == 'Attribute':
-                name = item.name
-                vis = item.get('visibility')
-                init = item.get('initialValue')
-                ty = item.get('type')
-                if ty is None:
-                    ty = item.get('type_string', unquote)
-
-                mul = item.get('multiplicity', VpMultiplicity)
-
-                obj.attributes.append(VpAttribute(vis, name, ty, init, mul))
-
-            if item.ty == 'Operation':
-                op = VpOperation()
-
-                op.name = item.name
-                op.vis = item.get('visibility')
-
-                def create_param(param):
-                    ty = param.get('type')
-                    if ty is None:
-                        ty = item.get('type_string', unquote)
-
-                    return param.name, ty
-
-                params = item.get('Child')
-                if params:
-                    op.params = list(map(create_param, params))
-
-                obj.operations.append(op)
-
-    return obj
-
-
 def map_type(ty):
     if ty is None:
         return 'void'
@@ -129,6 +50,14 @@ class VpClass:
 
     def get_file_name(self):
         return '{}.java'.format(self.name)
+
+    def get_file_path(self):
+        from pathlib import Path
+
+        package_path = Path(target, package.replace('.', '/'))
+        package_path.mkdir(parents=True, exist_ok=True)
+
+        return package_path / self.get_file_name()
 
     def set_parent(self, parent):
         self.parent = parent
@@ -283,6 +212,7 @@ class VpMultiplicity:
         else:
             self.max = int(raw)
 
+
 # the aggregation is either:
 # None -> association
 # 66 -> aggregation
@@ -293,3 +223,48 @@ class VpAggregationKind:
 
     def is_plain_association(self):
         return self.kind is None
+
+
+class VpDatabase:
+    def __init__(self, name):
+        self.name = name
+        self.tables = []
+
+    def get_file_name(self):
+        return '{}.sql'.format(self.name)
+
+    def get_file_path(self):
+        return self.get_file_name()
+
+    def generate(self):
+        raise Exception('pls dont do this')
+
+    def add_table(self, name):
+        table = VpTable(name)
+        self.tables.append(table)
+        return table
+
+
+class VpTable:
+    def __init__(self, name):
+        self.name = name
+        self.columns = []
+
+    def add_column(self, name, ty, length, is_primary=False):
+        column = VpColumn(name, ty, length, is_primary)
+        self.columns.append(column)
+        return column
+
+
+class VpColumn:
+    def __init__(self, name, ty, length, is_primary=False):
+        self.name = name
+        self.ty = ty
+        self.length = length
+        self.is_primary = is_primary
+        self.constraints = []
+
+        assert self.ty
+
+    def add_constraint(self):
+        pass

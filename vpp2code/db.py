@@ -56,17 +56,7 @@ class Database:
 
         return raw
 
-    def get_class_diagrams(self):
-        cur = self.con.cursor()
-        cur.execute(
-            """
-            SELECT id FROM diagram
-            WHERE diagram_type = 'ClassDiagram';
-            """
-        )
-        return cur.fetchall()
-
-    def get_class_diagram_elements(self, diagram_id):
+    def get_diagram_elements(self, diagram_id):
         cur = self.con.cursor()
         # using sqlite variable interpolation `?` delivers nothing...
         cur.execute(
@@ -77,6 +67,16 @@ class Database:
         )
         return ((row[0], self.to_def(row[1]), row[2]) for row in cur.fetchall())
 
+    def get_class_diagrams(self):
+        cur = self.con.cursor()
+        cur.execute(
+            """
+            SELECT id, name FROM diagram
+            WHERE diagram_type = 'ClassDiagram';
+            """
+        )
+        return cur.fetchall()
+
     def get_classes(self, model_id):
         cur = self.con.cursor()
         # using sqlite variable interpolation `?` delivers nothing...
@@ -86,6 +86,29 @@ class Database:
             FROM model_element
             WHERE id = '{}'
             AND model_type = 'Class'
+            """.format(model_id)
+        )
+        return ((row[0], row[1], self.to_def(row[2])) for row in cur.fetchall())
+
+    def get_entity_diagrams(self):
+        cur = self.con.cursor()
+        cur.execute(
+            """
+            SELECT id, name FROM diagram
+            WHERE diagram_type = 'ERDiagram';
+            """
+        )
+        return cur.fetchall()
+
+    def get_entities(self, model_id):
+        cur = self.con.cursor()
+        # using sqlite variable interpolation `?` delivers nothing...
+        cur.execute(
+            """
+            SELECT id, name, definition
+            FROM model_element
+            WHERE id = '{}'
+            AND model_type = 'DBTable'
             """.format(model_id)
         )
         return ((row[0], row[1], self.to_def(row[2])) for row in cur.fetchall())

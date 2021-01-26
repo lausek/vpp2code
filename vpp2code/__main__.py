@@ -6,55 +6,47 @@ import os.path
 
 try:
     from .db import *
+    from .java import *
+    from .sql import *
     from .vp import *
 
 except ImportError:
     from db import *
+    from java import *
+    from sql import *
     from vp import *
+
 
 DIAGRAM = 'DIAGRAM'
 DIAGRAM_ELEMENT = 'DIAGRAM_ELEMENT'
 MODEL_ELEMENT = 'MODEL_ELEMENT'
 
 
-def generate(model_items, target, package):
-    package_path = Path(target, package.replace('.', '/'))
-    package_path.mkdir(parents=True, exist_ok=True)
-
+def generate(model_items, target):
     for mid, mobj in model_items.items():
-        fname = mobj.get_file_name()
-        fpath = package_path / fname
+        fpath = mobj.get_file_path()
 
         with open(fpath, 'w') as fout:
             src = mobj.generate()
             fout.write(src)
 
 
-def read(db_path, package):
+def read(db_path, args):
     items = {}
 
     db = Database(db_path)
-    for row in db.get_class_diagrams():
-        diagram_id = row[0]
-        print(">>> generating", diagram_id)
 
-        elements = db.get_class_diagram_elements(diagram_id)
+    class_diagrams = db.get_class_diagrams()
+    if class_diagrams:
+        classes = java_read(db, args, class_diagrams)
+        if classes:
+            items.update(classes)
 
-        for element in elements:
-            # element
-            ety, edef, model_id = element
-
-            # classes
-            for mid, mname, mdef in db.get_classes(model_id):
-                mobj = parse(mdef, mname, package)
-                items[mid] = mobj
-
-            # connections: generalization
-            for mid, mty, mname, mdef in db.get_connections(model_id):
-                mobj = parse(mdef, mname, package)
-                
-                print(mobj.end.name(), '->', mobj.start.name())
-                items[mobj.end.mid()].set_parent(mobj.start.name())
+    er_diagrams = db.get_entity_diagrams()
+    if er_diagrams:
+        sqls = er_read(db, args, er_diagrams)
+        if sqls:
+            items.update(sqls)
 
     return items
 
@@ -70,8 +62,8 @@ def main():
 
     args = parser.parse_args()
 
-    items = read(args.diagram, args.package)
-    generate(items, args.target, args.package)
+    items = read(args.diagram, args)
+    generate(items, args.target)
 
 
 if __name__ == '__main__':
