@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import os.path
 
@@ -18,30 +19,39 @@ except ImportError:
     from sql import *
     from vp import *
 
-def generate(model_items, target):
+def generate(args, model_items):
     from pathlib import Path
 
     dispatchers = {
         'VpClass': JavaSourceGenerator(),
+        'VpEnum': JavaSourceGenerator(),
         'VpDatabase': SQLiteSourceGenerator(),
     }
+
+    # create target dir
+    Path(args.target).mkdir(parents=True, exist_ok=True)
 
     for mid, mobj in model_items.items():
         ty_name = type(mobj).__name__
 
         if ty_name not in dispatchers:
-            print('cannot generate code for', ty_name, '. skipping...')
+            logging.info('cannot generate code for `%s`. skipping...', ty_name)
             continue
         
         dispatcher = dispatchers[ty_name]
         src = dispatcher.generate(mobj)
-        fpath = Path(target, dispatcher.get_file_path(mobj))
+        fpath = Path(args.target, dispatcher.get_file_path(mobj))
+
+        # create all folders
+        fpath.parent.mkdir(parents=True, exist_ok=True)
 
         with open(fpath, 'w') as fout:
             fout.write(src)
 
+        logging.info('generated file %s...', fpath)
 
-def read(db_path, args):
+
+def read(args, db_path):
     items = {}
 
     # open vpp database
@@ -65,5 +75,5 @@ def read(db_path, args):
 
 
 def run(args):
-    items = read(args.diagram, args)
-    generate(items, args.target)
+    items = read(args, args.diagram)
+    generate(args, items)

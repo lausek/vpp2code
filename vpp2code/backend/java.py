@@ -17,7 +17,6 @@ class JavaSourceGenerator:
         from pathlib import Path
 
         package_path = Path(vp_object.package.replace('.', '/'))
-        package_path.mkdir(parents=True, exist_ok=True)
 
         return package_path / self.get_file_name(vp_object)
 
@@ -126,8 +125,7 @@ def get_visibility(item, default=''):
     if vis == 67:
         return VIS_PROTECTED
 
-    print(vis)
-    assert False
+    raise Exception('no visibility is known for `{}`'.format(vis))
 
 
 def is_uninitialized(vp_attr):

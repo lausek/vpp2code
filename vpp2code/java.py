@@ -1,3 +1,5 @@
+import logging
+
 try:
     from .vp import *
 
@@ -11,7 +13,7 @@ def java_read(db, args, class_diagrams):
 
     for class_diagram in class_diagrams:
         diagram_id = class_diagram[0]
-        print(">>> generating", diagram_id)
+        logging.info(">>> generating %s", diagram_id)
 
         for element in db.get_diagram_elements(diagram_id):
             # element
@@ -26,7 +28,7 @@ def java_read(db, args, class_diagrams):
             for mid, mty, mname, mdef in db.get_connections(model_id):
                 mobj = parse(mdef, mname, package)
                 
-                print(mobj.end.name(), '->', mobj.start.name())
+                logging.info('%s -> %s', mobj.end.name(), mobj.start.name())
                 items[mobj.end.mid()].set_parent(mobj.start.name())
 
     return items
@@ -41,8 +43,7 @@ def parse(mdef, mname=None, package=None):
         end = mdef.get('toModel')
         return VpGeneralization(start, end)
 
-    print(mdef.ty)
-    assert False
+    raise Exception('cannot parse type `{}`'.format(mdef.ty))
 
 
 def parse_class(mdef, mname=None, package=None):

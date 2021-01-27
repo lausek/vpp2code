@@ -10,11 +10,14 @@ try:
 except ImportError:
     from app import *
 
-#DIAGRAM = 'DIAGRAM'
-#DIAGRAM_ELEMENT = 'DIAGRAM_ELEMENT'
-#MODEL_ELEMENT = 'MODEL_ELEMENT'
 
 def main():
+    import logging
+    import sys
+
+    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
     current_dir = os.getcwd()
     default_target_dir = os.path.join(current_dir, 'src')
 
@@ -25,7 +28,7 @@ def main():
 
     args = parser.parse_args()
 
-    app.run()
+    run(args)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,11 @@
+import logging
+
 try:
     from .vp import *
 
 except ImportError:
     from vp import *
+
 
 def er_read(db, args, entity_diagrams):
     items = {}
@@ -11,7 +14,7 @@ def er_read(db, args, entity_diagrams):
         diagram_id, name = entity_diagram
         vp_database = VpDatabase(name)
 
-        print(">>> generating", diagram_id)
+        logging.info(">>> generating %s", diagram_id)
 
         items[diagram_id] = vp_database
 
@@ -29,8 +32,7 @@ def parse(vp_database, mdef):
     if mdef.ty == 'DBTable':
         return parse_table(vp_database, mdef)
 
-    print(mdef.ty)
-    assert False
+    raise Exception('cannot parse type `{}`'.format(mdef.ty))
 
 
 def parse_table(vp_database, mdef):
@@ -69,6 +71,4 @@ def map_type(ty):
     elif ty == '31':
         return 'integer'
 
-    print('> what type is', ty)
-
-    return None
+    raise Exception('no type is known for `{}`'.format(ty))
