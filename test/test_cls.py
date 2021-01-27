@@ -21,6 +21,9 @@ class TestJava(Test):
             source = generated_class.read()
             print(source)
 
+            # source cannot be empty
+            assert bool(source.strip())
+
             self.assertTrue(java_validator(source))
             run = True
 

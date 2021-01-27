@@ -31,9 +31,11 @@ class Test:
 
 @pytest.fixture
 def diagrams():
+    from pathlib import Path
+    test_root = Path(__file__).parent
     return {
-        'er': open('./test/er-diagram.vpp', 'rb').read(),
-        'cls': open('./test/cls-diagram.vpp', 'rb').read(),
+        'er': open(test_root / 'er-diagram.vpp', 'rb').read(),
+        'cls': open(test_root / 'cls-diagram.vpp', 'rb').read(),
     }
 
 @pytest.fixture
@@ -52,5 +54,24 @@ def java_validator():
         stream = antlr4.CommonTokenStream(lexer)
         parser = JavaParser(stream)
         tree = parser.compilationUnit()
+        return tree is not None
+    return inner
+
+@pytest.fixture
+def sqlite_validator():
+    try:
+        from .antlr import SQLiteLexer, SQLiteParser
+    except ImportError:
+        from .antlr import SQLiteLexer, SQLiteParser
+
+    from antlr4.InputStream import InputStream
+    import antlr4
+
+    def inner(source):
+        input_stream = InputStream(source)
+        lexer = SQLiteLexer(input_stream)
+        stream = antlr4.CommonTokenStream(lexer)
+        parser = SQLiteParser(stream)
+        tree = parser.sql_stmt_list()
         return tree is not None
     return inner
