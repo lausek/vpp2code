@@ -12,10 +12,12 @@ class SQLiteSourceGenerator:
 
     def generate(self, vp_object):
         ty_name = type(vp_object).__name__
+
         if ty_name == 'VpDatabase':
             return self.generate_database(vp_object)
         elif ty_name == 'VpTable':
             return self.generate_table(vp_object)
+
         raise Exception('Cannot generate code from `{}`'.format(ty_name))
 
     def generate_database(self, vp_database):

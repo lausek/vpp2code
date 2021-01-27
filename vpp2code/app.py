@@ -7,16 +7,16 @@ try:
     from .app import *
     from .backend import *
     from .db import *
-    from .java import *
-    from .sql import *
+    from .diagram_cl import *
+    from .diagram_er import *
     from .vp import *
 
 except ImportError:
     from app import *
     from backend import *
     from db import *
-    from java import *
-    from sql import *
+    from diagram_cl import *
+    from diagram_er import *
     from vp import *
 
 def generate(args, model_items):

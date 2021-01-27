@@ -22,10 +22,12 @@ class JavaSourceGenerator:
 
     def generate(self, vp_object):
         ty_name = type(vp_object).__name__
+
         if ty_name == 'VpClass':
             return self.generate_class(vp_object)
         elif ty_name == 'VpEnum':
             return self.generate_enum(vp_object)
+
         raise Exception('Cannot generate code from `{}`'.format(ty_name))
 
     def generate_class(self, vp_class):
