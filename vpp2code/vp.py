@@ -54,7 +54,7 @@ class VpClass:
     def get_file_path(self):
         from pathlib import Path
 
-        package_path = Path(target, package.replace('.', '/'))
+        package_path = Path(self.package.replace('.', '/'))
         package_path.mkdir(parents=True, exist_ok=True)
 
         return package_path / self.get_file_name()
@@ -193,7 +193,9 @@ class VpOperation:
 
     def generate(self):
         vis, name, ret = self.get_vis(), self.name, map_type(self.ret)
-        params = ', '.join(map(lambda p: '{} {}'.format(p[1].name(), p[0]), self.params))
+        def to_ty_name(slot):
+            return slot if isinstance(slot, str) else slot.name()
+        params = ', '.join(map(lambda p: '{} {}'.format(to_ty_name(p[1]), p[0]), self.params))
         return "{} {} {}({}) {{}}".format(vis, ret, name, params)
 
 
@@ -237,7 +239,13 @@ class VpDatabase:
         return self.get_file_name()
 
     def generate(self):
-        raise Exception('pls dont do this')
+        src = 'CREATE DATABASE {};\n'.format(self.name)
+        src += 'USE DATABASE {};\n'.format(self.name)
+
+        for table in self.tables:
+            src += table.generate()
+
+        return src
 
     def add_table(self, name):
         table = VpTable(name)
@@ -254,6 +262,27 @@ class VpTable:
         column = VpColumn(name, ty, length, is_primary)
         self.columns.append(column)
         return column
+
+    def generate(self):
+        src = 'CREATE TABLE {} (\n'.format(self.name)
+
+        pk = []
+
+        for column in self.columns:
+            ty = '{}({})'.format(column.ty, column.length)
+            attrs = []
+
+            if column.is_primary:
+                pk.append(column.name)
+
+            src += '{} {} {},\n'.format(column.name, ty, ' '.join(attrs))
+
+        if pk:
+            src += 'PRIMARY KEY ({})\n'.format(', '.join(pk))
+
+        src += ');\n'
+
+        return src
 
 
 class VpColumn:

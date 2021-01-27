@@ -4,6 +4,7 @@ try:
 except ImportError:
     from vp import *
 
+
 def java_read(db, args, class_diagrams):
     package = args.package
     items = {}
@@ -29,6 +30,7 @@ def java_read(db, args, class_diagrams):
                 items[mobj.end.mid()].set_parent(mobj.start.name())
 
     return items
+
 
 def parse(mdef, mname=None, package=None):
     if mdef.ty == 'Class':
@@ -96,7 +98,7 @@ def parse_class(mdef, mname=None, package=None):
                 def create_param(param):
                     ty = param.get('type')
                     if ty is None:
-                        ty = item.get('type_string', unquote)
+                        ty = param.get('type_string', unquote)
 
                     return param.name, ty
 

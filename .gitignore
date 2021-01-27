@@ -1,4 +1,5 @@
-**/*.vpp
+*.vpp
+*.jar
 **/__pycache__/*
 .idea/*
 src/*

@@ -11,5 +11,8 @@ setup(
     install_requires=[
         'lark'
     ],
+    test_require=[
+        'antlr4-python3-runtime'
+    ],
     entry_points={'console_scripts': ['vpp2code=vpp2code.__main__:main']}
 )
