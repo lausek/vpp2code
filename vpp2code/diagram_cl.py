@@ -7,7 +7,7 @@ except ImportError:
     from vp import *
 
 
-def java_read(db, args, class_diagrams):
+def read_classes(db, args, class_diagrams):
     package = args.package
     items = {}
 

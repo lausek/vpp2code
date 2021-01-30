@@ -7,7 +7,7 @@ except ImportError:
     from vp import *
 
 
-def er_read(db, args, entity_diagrams):
+def read_entities(db, args, entity_diagrams):
     items = {}
 
     for entity_diagram in entity_diagrams:

@@ -60,14 +60,14 @@ def read(args, db_path):
     # read all class diagrams
     class_diagrams = db.get_class_diagrams()
     if class_diagrams:
-        classes = java_read(db, args, class_diagrams)
+        classes = read_classes(db, args, class_diagrams)
         if classes:
             items.update(classes)
 
     # read all entity relationship diagrams
     er_diagrams = db.get_entity_diagrams()
     if er_diagrams:
-        sqls = er_read(db, args, er_diagrams)
+        sqls = read_entities(db, args, er_diagrams)
         if sqls:
             items.update(sqls)
 
