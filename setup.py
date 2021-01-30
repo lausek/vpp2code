@@ -7,6 +7,7 @@ setup(
     description='generate java code from vpp files',
     url='https://github.com/lausek/vpp2code',
     packages=find_packages(),
+    package_data={'': ['vpp2code/defgrammar.lark']},
     include_package_data=True,
     install_requires=[
         'lark'
