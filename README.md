@@ -9,8 +9,8 @@ vpp2code diagram.vpp
 ## Install
 
 ``` bash
-git clone https://github.com/lausek/vppcode
-cd vppcode
+git clone https://github.com/lausek/vpp2code
+cd vpp2code
 pip3 install .
 ```
 
