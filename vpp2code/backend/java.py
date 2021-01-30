@@ -7,6 +7,9 @@ class JavaSourceGenerator:
     def __init__(self):
         pass
 
+    def get_target_output(self):
+        return 'Java'
+
     def get_package_path(self, vp_object):
         return '.'.join([vp_object.package, vp_object.name])
 

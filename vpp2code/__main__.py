@@ -21,10 +21,13 @@ def main():
     current_dir = os.getcwd()
     default_target_dir = os.path.join(current_dir, 'src')
 
-    parser = argparse.ArgumentParser(description='convert visual paradigm diagrams to java code')
-    parser.add_argument('diagram', metavar='DIAGRAM', type=str, help='path to the vp diagram file')
-    parser.add_argument('--package', type=str, default='com.vpp2code', help='java package name to use as base')
-    parser.add_argument('--target', type=str, default=default_target_dir, help='location for the resulting java code')
+    parser = argparse.ArgumentParser(description='Convert visual paradigm diagrams into code')
+    parser.add_argument('diagram', metavar='DIAGRAM', type=str, help='Path to the VP diagram file')
+
+    parser.add_argument('--generate', default=False, action='store_true', help='Output directory of the resulting code')
+    parser.add_argument('--target-dir', type=str, default=default_target_dir, help='Output directory of the resulting code')
+
+    parser.add_argument('--java-package', type=str, default='com.vpp2code', help='Java package name to use as base')
 
     args = parser.parse_args()
 

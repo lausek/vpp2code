@@ -8,12 +8,13 @@ except ImportError:
 
 
 def read_classes(db, args, class_diagrams):
-    package = args.package
+    package = args.java_package
     items = {}
 
     for class_diagram in class_diagrams:
         diagram_id = class_diagram[0]
-        logging.info(">>> generating %s", diagram_id)
+
+        logging.info(">>> reading diagram %s", diagram_id)
 
         for element in db.get_diagram_elements(diagram_id):
             # element

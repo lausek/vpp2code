@@ -19,28 +19,30 @@ except ImportError:
     from diagram_er import *
     from vp import *
 
+
+DISPATCHERS = {
+    'VpClass': JavaSourceGenerator(),
+    'VpEnum': JavaSourceGenerator(),
+    'VpDatabase': SQLiteSourceGenerator(),
+}
+
+
 def generate(args, model_items):
     from pathlib import Path
 
-    dispatchers = {
-        'VpClass': JavaSourceGenerator(),
-        'VpEnum': JavaSourceGenerator(),
-        'VpDatabase': SQLiteSourceGenerator(),
-    }
-
     # create target dir
-    Path(args.target).mkdir(parents=True, exist_ok=True)
+    Path(args.target_dir).mkdir(parents=True, exist_ok=True)
 
     for mid, mobj in model_items.items():
         ty_name = type(mobj).__name__
 
-        if ty_name not in dispatchers:
+        if ty_name not in DISPATCHERS:
             logging.info('cannot generate code for `%s`. skipping...', ty_name)
             continue
         
-        dispatcher = dispatchers[ty_name]
+        dispatcher = DISPATCHERS[ty_name]
         src = dispatcher.generate(mobj)
-        fpath = Path(args.target, dispatcher.get_file_path(mobj))
+        fpath = Path(args.target_dir, dispatcher.get_file_path(mobj))
 
         # create all folders
         fpath.parent.mkdir(parents=True, exist_ok=True)
@@ -74,6 +76,26 @@ def read(args, db_path):
     return items
 
 
+def display(items):
+    for item in items.values():
+        ty_name = type(item).__name__
+
+        if ty_name not in DISPATCHERS:
+            logging.warning('cannot generate type `%s`. skipping...', ty_name)
+            continue
+
+        dispatcher_target_output = DISPATCHERS[ty_name].get_target_output()
+
+        logging.info('%s as %s: \n%s', item.name, dispatcher_target_output, str(item))
+
+
 def run(args):
     items = read(args, args.diagram)
-    generate(args, items)
+
+    display(items)
+
+    if args.generate:
+        generate(args, items)
+    else:
+        logging.info('')
+        logging.warning('no files were generated. add explicit parameter --generate instead.')

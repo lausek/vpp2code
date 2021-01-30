@@ -2,6 +2,9 @@ class SQLiteSourceGenerator:
     def __init__(self):
         pass
 
+    def get_target_output(self):
+        return 'SQLite'
+
     def get_file_name(self, vp_object):
         assert type(vp_object).__name__ == 'VpDatabase'
         return '{}.sql'.format(vp_object.name)

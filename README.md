@@ -3,7 +3,7 @@
 generate java source code from vpp files.
 
 ``` bash
-vpp2code diagram.vpp
+vpp2code diagram.vpp [--generate]
 ```
 
 ## Install

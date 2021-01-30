@@ -3,13 +3,28 @@ import pytest
 from .deps import *
 
 class TestJava(Test):
-    def test_er_diagram(self, diagrams, tmpdir, java_validator):
+    def test_cls_diagram(self, diagrams, tmpdir):
         # copy file to tmpdir and change directory
-        er_file = tmpdir.join('cls-diagram.vpp')
-        er_file.write_binary(diagrams['cls'])
+        cls_file = tmpdir.join('cls-diagram.vpp')
+        cls_file.write_binary(diagrams['cls'])
         os.chdir(tmpdir)
 
-        args = Args(diagram='cls-diagram.vpp', target='', package='de.vpp2code')
+        target_dir = tmpdir.join('de').join('vpp2code')
+        args = Args(diagram='cls-diagram.vpp', target_dir='', java_package='de.vpp2code', generate=False)
+
+        self.assertEqual(1, len(tmpdir.listdir()))
+
+        vpp2code.run(args)
+
+        self.assertEqual(1, len(tmpdir.listdir()))
+
+    def test_cls_diagram_generate(self, diagrams, tmpdir, java_validator):
+        # copy file to tmpdir and change directory
+        cls_file = tmpdir.join('cls-diagram.vpp')
+        cls_file.write_binary(diagrams['cls'])
+        os.chdir(tmpdir)
+
+        args = Args(diagram='cls-diagram.vpp', target_dir='', java_package='de.vpp2code', generate=True)
 
         vpp2code.run(args)
 

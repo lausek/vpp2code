@@ -14,7 +14,7 @@ def read_entities(db, args, entity_diagrams):
         diagram_id, name = entity_diagram
         vp_database = VpDatabase(name)
 
-        logging.info(">>> generating %s", diagram_id)
+        logging.info(">>> reading diagram %s", diagram_id)
 
         items[diagram_id] = vp_database
 
