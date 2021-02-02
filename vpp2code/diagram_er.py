@@ -42,7 +42,8 @@ def parse_table(vp_database, mdef):
         name = column.name
 
         ty = column.get('type')
-        ty = 'char' if ty is None else map_type(ty)
+        ty = 'integer' if ty is None else map_type(ty)
+        logging.info('column %s %s %s', mdef.name, name, ty)
 
         length = column.get('length')
         is_primary = bool(column.get('primaryKey'))
@@ -69,6 +70,6 @@ def map_type(ty):
     elif ty == '27':
         return 'varchar'
     elif ty == '31':
-        return 'integer'
+        return 'char'
 
     raise Exception('no type is known for `{}`'.format(ty))
