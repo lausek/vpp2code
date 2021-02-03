@@ -82,6 +82,8 @@ def map_type(ty):
         return 'varchar'
     elif ty == '31':
         return 'char'
+    elif ty == '4':
+        return 'float'
 
     raise Exception('no type is known for `{}`'.format(ty))
 
