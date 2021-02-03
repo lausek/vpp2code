@@ -52,15 +52,26 @@ def parse_table(vp_database, mdef):
         vp_column = table.add_column(name, ty, length, is_primary)
         
         if constraints:
+            # TODO: this is hacky but should work for most simple cases
             for constraint in constraints:
                 ref_column = constraint.get('refColumn').cls()
                 foreign_key = constraint.get('foreignKey').cls()
                 # referenced table
                 from_model = foreign_key.get('fromModel').cls()
                 # current table
-                to_model = foreign_key.get('toModel').cls()
+                #to_model = foreign_key.get('toModel').cls()
+
+                on_update = map_constraint_method(foreign_key.get('onUpdate'))
+                on_delete = map_constraint_method(foreign_key.get('onDelete'))
+
+                ref_table = from_model.name
+
+                for child in from_model.get('Child'):
+                    if child.get('primaryKey') is not None:
+                        vp_column.add_constraint(ref_table, [child.name], on_update, on_delete)
 
     return table
+
 
 def map_type(ty):
     if ty == '11':
@@ -73,3 +84,10 @@ def map_type(ty):
         return 'char'
 
     raise Exception('no type is known for `{}`'.format(ty))
+
+
+def map_constraint_method(method):
+    if method is None or method == 'NULL':
+        return 'CASCADE'
+
+    raise Exception('constraint method `{}` is not supported'.format(method))

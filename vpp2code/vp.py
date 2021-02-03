@@ -120,5 +120,14 @@ class VpColumn:
 
         assert self.ty
 
-    def add_constraint(self):
-        pass
+    def add_constraint(self, ref_table, ref_columns, on_update=None, on_delete=None):
+        columns = [self.name]
+        self.constraints.append(VpConstraint(columns, ref_table, ref_columns, on_update, on_delete))
+
+class VpConstraint:
+    def __init__(self, columns, ref_table, ref_columns, on_update=None, on_delete=None):
+        self.columns = columns
+        self.ref_table = ref_table
+        self.ref_columns = ref_columns
+        self.on_update = on_update
+        self.on_delete = on_delete

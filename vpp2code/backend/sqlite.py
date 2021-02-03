@@ -39,6 +39,7 @@ class SQLiteSourceGenerator:
         src = 'CREATE TABLE {} (\n'.format(vp_table.name)
         pk = []
 
+        # declare columns
         for column in vp_table.columns:
             attrs = []
 
@@ -53,8 +54,22 @@ class SQLiteSourceGenerator:
 
             src += '\t{} {} {},\n'.format(column.name, ty, ' '.join(attrs))
 
+        # declare primary key
         if pk:
-            src += '\tPRIMARY KEY ({})\n'.format(', '.join(pk))
+            src += '\tPRIMARY KEY ({}),\n'.format(', '.join(pk))
+
+        # declare foreign key constraints of columns
+        for column in vp_table.columns:
+            for constraint in column.constraints:
+                constraint_name = 'FK_{}{}'.format(vp_table.name, constraint.ref_table)
+                constraint_body = 'FOREIGN KEY ({}) REFERENCES {}({})\n\t\tON UPDATE {}\n\t\tON DELETE {}'.format(
+                    ','.join(constraint.columns),
+                    constraint.ref_table,
+                    ','.join(constraint.ref_columns),
+                    constraint.on_update,
+                    constraint.on_delete,
+                )
+                src += '\tCONSTRAINT {} {},\n'.format(constraint_name, constraint_body)
 
         src += ');\n'
 
