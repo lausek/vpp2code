@@ -38,6 +38,17 @@ def diagrams():
         'cls': open(test_root / 'cls-diagram.vpp', 'rb').read(),
     }
 
+from antlr4.error.ErrorListener import ErrorListener
+
+# react on thrown exceptions
+class CustomErrorListener(ErrorListener):
+    def __init__(self):
+        super().__init__()
+        self.no_errors = True
+
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        self.no_errors = False
+
 @pytest.fixture
 def java_validator():
     try:
@@ -50,11 +61,18 @@ def java_validator():
 
     def inner(source):
         input_stream = InputStream(source)
+        listener = CustomErrorListener()
+
         lexer = JavaLexer(input_stream)
+        lexer.addErrorListener(listener)
+
         stream = antlr4.CommonTokenStream(lexer)
+
         parser = JavaParser(stream)
+        parser.addErrorListener(listener)
+
         tree = parser.compilationUnit()
-        return tree is not None
+        return listener.no_errors
     return inner
 
 @pytest.fixture
@@ -69,9 +87,16 @@ def sqlite_validator():
 
     def inner(source):
         input_stream = InputStream(source)
+        listener = CustomErrorListener()
+
         lexer = SQLiteLexer(input_stream)
+        lexer.addErrorListener(listener)
+
         stream = antlr4.CommonTokenStream(lexer)
+
         parser = SQLiteParser(stream)
+        parser.addErrorListener(listener)
+
         tree = parser.sql_stmt_list()
-        return tree is not None
+        return listener.no_errors
     return inner
