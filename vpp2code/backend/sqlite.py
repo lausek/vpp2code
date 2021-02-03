@@ -36,8 +36,7 @@ class SQLiteSourceGenerator:
         return src
 
     def generate_table(self, vp_table):
-        src = 'CREATE TABLE {} (\n'.format(vp_table.name)
-        pk = []
+        pk, table_body = [], []
 
         # declare columns
         for column in vp_table.columns:
@@ -52,11 +51,11 @@ class SQLiteSourceGenerator:
             if column.is_primary:
                 pk.append(column.name)
 
-            src += '\t{} {} {},\n'.format(column.name, ty, ' '.join(attrs))
+            table_body.append('\t{} {} {}'.format(column.name, ty, ' '.join(attrs)))
 
         # declare primary key
         if pk:
-            src += '\tPRIMARY KEY ({}),\n'.format(', '.join(pk))
+            table_body.append('\tPRIMARY KEY ({})'.format(', '.join(pk)))
 
         # declare foreign key constraints of columns
         for column in vp_table.columns:
@@ -69,9 +68,9 @@ class SQLiteSourceGenerator:
                     constraint.on_update,
                     constraint.on_delete,
                 )
-                src += '\tCONSTRAINT {} {},\n'.format(constraint_name, constraint_body)
+                table_body.append('\tCONSTRAINT {} {}'.format(constraint_name, constraint_body))
 
-        src += ');\n'
+        src = 'CREATE TABLE {} (\n{}\n);\n'.format(vp_table.name, ',\n'.join(table_body))
 
         return src
 
