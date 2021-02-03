@@ -24,8 +24,11 @@ class SQLiteSourceGenerator:
         raise Exception('Cannot generate code from `{}`'.format(ty_name))
 
     def generate_database(self, vp_database):
-        src = 'CREATE DATABASE {};\n'.format(vp_database.name)
-        src += 'USE DATABASE {};\n'.format(vp_database.name)
+        db_name = vp_database.name.replace('-', '_')
+
+        src = 'DROP DATABASE IF EXISTS {};\n'.format(db_name)
+        src += 'CREATE DATABASE {};\n'.format(db_name)
+        src += 'USE DATABASE {};\n'.format(db_name)
 
         for table in vp_database.tables:
             src += self.generate(table)
@@ -37,8 +40,13 @@ class SQLiteSourceGenerator:
         pk = []
 
         for column in vp_table.columns:
-            ty = '{}({})'.format(column.ty, column.length)
             attrs = []
+
+            # determine column type
+            if column.length is None:
+                ty = str(column.ty)
+            else:
+                ty = '{}({})'.format(column.ty, column.length)
 
             if column.is_primary:
                 pk.append(column.name)
