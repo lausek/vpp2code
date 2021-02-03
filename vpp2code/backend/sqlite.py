@@ -28,7 +28,7 @@ class SQLiteSourceGenerator:
 
         src = 'DROP DATABASE IF EXISTS {};\n'.format(db_name)
         src += 'CREATE DATABASE {};\n'.format(db_name)
-        src += 'USE DATABASE {};\n'.format(db_name)
+        src += 'USE {};\n'.format(db_name)
 
         for table in vp_database.tables:
             src += self.generate(table)
