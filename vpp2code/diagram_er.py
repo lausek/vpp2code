@@ -47,9 +47,10 @@ def parse_table(vp_database, mdef):
 
         length = column.get('length')
         is_primary = bool(column.get('primaryKey'))
+        is_nullable = column.get('nullable', lambda value: value == 'T')
         constraints = column.get('foreignKeyConstraints')
 
-        vp_column = table.add_column(name, ty, length, is_primary)
+        vp_column = table.add_column(name, ty, length, is_primary, is_nullable)
         
         if constraints:
             # TODO: this is hacky but should work for most simple cases

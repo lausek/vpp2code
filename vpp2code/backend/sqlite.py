@@ -51,6 +51,9 @@ class SQLiteSourceGenerator:
             if column.is_primary:
                 pk.append(column.name)
 
+            if not column.is_nullable:
+                attrs.append('NOT NULL')
+
             table_body.append('\t{} {} {}'.format(column.name, ty, ' '.join(attrs)))
 
         # declare primary key

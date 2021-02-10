@@ -104,18 +104,19 @@ class VpTable:
         self.name = name
         self.columns = []
 
-    def add_column(self, name, ty, length, is_primary=False):
-        column = VpColumn(name, ty, length, is_primary)
+    def add_column(self, name, ty, length, is_primary=False, is_nullable=False):
+        column = VpColumn(name, ty, length, is_primary, is_nullable)
         self.columns.append(column)
         return column
 
 
 class VpColumn:
-    def __init__(self, name, ty, length, is_primary=False):
+    def __init__(self, name, ty, length, is_primary=False, is_nullable=False):
         self.name = name
         self.ty = ty
         self.length = length
         self.is_primary = is_primary
+        self.is_nullable = is_nullable
         self.constraints = []
 
         assert self.ty
@@ -124,6 +125,7 @@ class VpColumn:
         columns = [self.name]
         self.constraints.append(VpConstraint(columns, ref_table, ref_columns, on_update, on_delete))
 
+
 class VpConstraint:
     def __init__(self, columns, ref_table, ref_columns, on_update=None, on_delete=None):
         self.columns = columns
@@ -131,3 +133,4 @@ class VpConstraint:
         self.ref_columns = ref_columns
         self.on_update = on_update
         self.on_delete = on_delete
+
