@@ -21,7 +21,7 @@ This project uses antlr4 to validate the programs output.
 ``` bash
 curl -O https://www.antlr.org/download/antlr-4.9-complete.jar
 
-# generate mysql lexer and parser (does not work :-)
+# generate sqlite lexer and parser
 java antlr-4.9-complete.jar -Dlanguage=Python3 test/antlr/mysql/SQLiteLexer.g4 test/antlr/mysql/SQLiteParser.g4
 
 # generate java lexer and parser

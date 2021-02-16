@@ -13,7 +13,7 @@ def to_attr_name(t):
 class VpClass:
     def __init__(self, name, package):
         self.name = name.strip()
-        self.package = package
+        self.package = package.strip()
 
         self.vis = VIS_PUBLIC
         self.parent = None

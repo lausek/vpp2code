@@ -36,7 +36,8 @@ class JavaSourceGenerator:
     def generate_class(self, vp_class):
         src = ''
 
-        src += 'package {};\n'.format(vp_class.package)
+        if vp_class.package:
+            src += 'package {};\n'.format(vp_class.package)
 
         if vp_class.dependencies:
             src += '\n'
