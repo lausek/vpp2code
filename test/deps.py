@@ -35,7 +35,10 @@ def diagrams():
     test_root = Path(__file__).parent
     return {
         'er': open(test_root / 'er-diagram.vpp', 'rb').read(),
+        'er2': open(test_root / 'er-diagram2.vpp', 'rb').read(),
+        'er3': open(test_root / 'er-diagram3.vpp', 'rb').read(),
         'cls': open(test_root / 'cls-diagram.vpp', 'rb').read(),
+        'cls2': open(test_root / 'cls-diagram2.vpp', 'rb').read(),
     }
 
 from antlr4.error.ErrorListener import ErrorListener

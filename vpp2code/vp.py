@@ -28,6 +28,10 @@ class VpClass:
         self.parent = parent
 
 
+class VpInterface(VpClass):
+    pass
+
+
 class VpEnum(VpClass):
     pass
 

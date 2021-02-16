@@ -23,6 +23,7 @@ except ImportError:
 DISPATCHERS = {
     'VpClass': JavaSourceGenerator(),
     'VpEnum': JavaSourceGenerator(),
+    'VpInterface': JavaSourceGenerator(),
     'VpDatabase': SQLiteSourceGenerator(),
 }
 

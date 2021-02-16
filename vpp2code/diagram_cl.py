@@ -50,8 +50,12 @@ def parse(mdef, mname=None, package=None):
 def parse_class(mdef, mname=None, package=None):
     # check stereotypes: enumeration, interface (?)
     stereotypes = mdef.get('stereotypes', lambda sts: list(map(lambda s: s.name(), sts)))
-    if stereotypes is not None and 'enumeration' in stereotypes:
+    if stereotypes and 'enumeration' in stereotypes:
         obj = VpEnum(mname, package)
+
+    elif stereotypes and 'Interface' in stereotypes:
+        obj = VpInterface(mname, package)
+
     else:
         obj = VpClass(mname, package)
 

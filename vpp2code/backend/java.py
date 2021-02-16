@@ -30,6 +30,8 @@ class JavaSourceGenerator:
             return self.generate_class(vp_object)
         elif ty_name == 'VpEnum':
             return self.generate_enum(vp_object)
+        elif ty_name == 'VpInterface':
+            return self.generate_interface(vp_object)
 
         raise Exception('Cannot generate code from `{}`'.format(ty_name))
 
@@ -90,11 +92,31 @@ class JavaSourceGenerator:
 
     def generate_enum(self, vp_enum):
         src = ''
-        src += 'package {};\n'.format(vp_enum.package)
+
+        if vp_enum.package:
+            src += 'package {};\n'.format(vp_enum.package)
+
         src += '\n'
         src += '{} enum {} {{\n'.format(vp_enum.vis, vp_enum.name)
         src += ',\n'.join(map(lambda a: '\t' + a.name, vp_enum.attributes))
         src += '\n}\n'
+        return src
+
+    def generate_interface(self, vp_interface):
+        src = ''
+
+        if vp_interface.package:
+            src += 'package {};\n'.format(vp_interface.package)
+
+        src += '{} interface {} {{\n'.format(vp_interface.vis, vp_interface.name)
+
+        if vp_interface.operations:
+            src += '\n'
+            for vp_operation in vp_interface.operations:
+                src += '\t{}\n'.format(self.generate_operation(vp_operation, body=';'))
+
+        src += '\n}\n'
+
         return src
 
     def generate_attribute(self, vp_attr):
@@ -102,7 +124,7 @@ class JavaSourceGenerator:
         name, ty = vp_attr.name, get_ty(vp_attr)
         return "{} {} {};".format(vis, ty, name)
 
-    def generate_operation(self, vp_operation):
+    def generate_operation(self, vp_operation, body='{}'):
         vis = get_visibility(vp_operation, default=VIS_PUBLIC)
         name, ret = vp_operation.name, map_type(vp_operation.ret)
 
@@ -110,7 +132,7 @@ class JavaSourceGenerator:
             return slot if isinstance(slot, str) else slot.name()
 
         params = ', '.join(map(lambda p: '{} {}'.format(to_ty_name(p[1]), p[0]), vp_operation.params))
-        return "{} {} {}({}) {{}}".format(vis, ret, name, params)
+        return "{} {} {}({}) {}".format(vis, ret, name, params, body)
 
 
 def map_type(ty):

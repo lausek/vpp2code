@@ -47,7 +47,7 @@ class TestSQL(Test):
     def test_er_diagram_sqlite_generate2(self, diagrams, tmpdir, sqlite_validator):
         # copy file to tmpdir and change directory
         er_file = tmpdir.join('er-diagram2.vpp')
-        er_file.write_binary(diagrams['er'])
+        er_file.write_binary(diagrams['er2'])
         os.chdir(tmpdir)
 
         args = Args(diagram='er-diagram2.vpp', target_dir='', generate=True)
