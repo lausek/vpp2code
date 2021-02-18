@@ -10,6 +10,9 @@ import vpp2code
 
 class Args:
     def __init__(self, **kwargs):
+        self.verbose = False
+        self.java_package = 'com.vpp2code'
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 

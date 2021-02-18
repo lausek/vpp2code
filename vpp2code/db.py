@@ -71,11 +71,11 @@ class Database:
         cur = self.con.cursor()
         cur.execute(
             """
-            SELECT id, name FROM diagram
+            SELECT id, name, definition FROM diagram
             WHERE diagram_type = 'ClassDiagram';
             """
         )
-        return cur.fetchall()
+        return ((row[0], row[1], self.to_def(row[2])) for row in cur.fetchall())
 
     def get_classes(self, model_id):
         cur = self.con.cursor()

@@ -57,6 +57,9 @@ def generate(args, model_items):
 def read(args, db_path):
     items = {}
 
+    if not os.path.exists(db_path):
+        raise Exception('file not found: {}'.format(db_path))
+
     # open vpp database
     db = Database(db_path)
 

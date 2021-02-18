@@ -28,7 +28,7 @@ class TestJava(Test):
 
         vpp2code.run(args)
 
-        target_dir = tmpdir.join('de').join('vpp2code')
+        target_dir = tmpdir.join('de').join('vpp2code').join('Gepaeckkontrolle')
 
         run = False
         for generated_class in target_dir.listdir():
@@ -54,7 +54,7 @@ class TestJava(Test):
 
         vpp2code.run(args)
 
-        target_dir = tmpdir.join('de').join('vpp2code')
+        target_dir = tmpdir.join('de').join('vpp2code').join('specification')
 
         run = False
         interface_found = False
