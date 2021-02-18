@@ -77,7 +77,7 @@ def read(args, db_path):
     return items
 
 
-def display(items):
+def display(args, items):
     for item in items.values():
         ty_name = type(item).__name__
 
@@ -87,13 +87,17 @@ def display(items):
 
         dispatcher_target_output = DISPATCHERS[ty_name].get_target_output()
 
-        logging.info('%s as %s: \n%s', item.name, dispatcher_target_output, str(item))
+        logging.info('## %s as %s\n', item.name, dispatcher_target_output)
+
+        if args.verbose:
+            dispatcher_target_src = DISPATCHERS[ty_name].generate(item)
+            logging.info('%s', dispatcher_target_src)
 
 
 def run(args):
     items = read(args, args.diagram)
 
-    display(items)
+    display(args, items)
 
     if args.generate:
         generate(args, items)

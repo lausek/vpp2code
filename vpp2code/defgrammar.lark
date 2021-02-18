@@ -2,21 +2,17 @@ start: obj
 
 ?text: /[A-Za-z0-9\-\._\"\$@]+/ | /".*"/
 
-ref: "<" text ">"
-ref2: "<" text ":" text ">"
-ref3: "<" text ":" text ":" text ">"
-
 attr: text "=" value ";"
 
 speci: text ":" text ":" text
 obj: speci "{" attr* "}"
 list: "(" value ("," value)* ")"
 
+reference: "<" text (":" text)* ">"
+
 ?value: attr
     | text
-    | ref
-    | ref2
-    | ref3
+    | reference
     | "{" obj "}"
     | list
 
