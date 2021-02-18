@@ -108,6 +108,7 @@ class JavaSourceGenerator:
         if vp_interface.package:
             src += 'package {};\n'.format(vp_interface.package)
 
+        src += '\n'
         src += '{} interface {} {{\n'.format(vp_interface.vis, vp_interface.name)
 
         if vp_interface.operations:
