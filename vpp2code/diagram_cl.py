@@ -87,10 +87,10 @@ def parse_class(mdef, mname=None, package=None):
             kind = end.cls().get('from').get('aggregationKind')
 
             end = end.cls().get('to')
-            ty = end.get('type').name()
+            ty = determine_type(end)
             mul = end.get('multiplicity', VpMultiplicity)
 
-            attr = VpAttribute(name=to_attr_name(ty), ty=ty)
+            attr = VpAttribute(name=to_property_name(ty), ty=ty)
             attr.mul = mul
             attr.kind = VpAggregationKind(kind)
             obj.attributes.append(attr)
@@ -103,9 +103,7 @@ def parse_class(mdef, mname=None, package=None):
                 name = item.name
                 vis = item.get('visibility')
                 init = item.get('initialValue')
-                ty = item.get('type')
-                if ty is None:
-                    ty = item.get('type_string', unquote)
+                ty = determine_type(item)
 
                 mul = item.get('multiplicity', VpMultiplicity)
 
@@ -113,16 +111,13 @@ def parse_class(mdef, mname=None, package=None):
 
             if item.ty == 'Operation':
                 op = VpOperation()
+                # TODO: where is the return type??
 
                 op.name = item.name
                 op.vis = item.get('visibility')
 
                 def create_param(param):
-                    ty = param.get('type')
-                    if ty is None:
-                        ty = param.get('type_string', unquote)
-
-                    return param.name, ty
+                    return param.name, determine_type(param)
 
                 params = item.get('Child')
                 if params:
@@ -131,3 +126,34 @@ def parse_class(mdef, mname=None, package=None):
                 obj.operations.append(op)
 
     return obj
+
+
+def determine_type(item):
+    def ref_to_trivial_name(item):
+        return item.name()
+
+    ty_name = item.get('type', ref_to_trivial_name)
+
+    # if the specified type has no reference in this diagram, try to get raw name
+    if not ty_name:
+        ty_name = item.get('type_string', unquote)
+    
+    # if the type is generic, read type attributes
+    generic_info = item.get('templateTypeBindInfo')
+    if generic_info:
+        type_attrs = []
+
+        for generic_type_attr in generic_info.get('details'):
+            generic_type_attr = generic_type_attr.get('arguments')
+            
+            generic_type_attr_name = generic_type_attr.get('bindedType', ref_to_trivial_name)
+
+            # if the specified type has no reference in this diagram, try to get raw name
+            if not generic_type_attr_name:
+               generic_type_attr_name = generic_type_attr.get('bindedType_string', unquote)
+
+            type_attrs.append(VpType(generic_type_attr_name))
+
+        return VpType(ty_name, attrs=type_attrs)
+
+    return VpType(ty_name)

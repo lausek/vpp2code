@@ -28,8 +28,10 @@ class JavaSourceGenerator:
 
         if ty_name == 'VpClass':
             return self.generate_class(vp_object)
+
         elif ty_name == 'VpEnum':
             return self.generate_enum(vp_object)
+
         elif ty_name == 'VpInterface':
             return self.generate_interface(vp_object)
 
@@ -68,7 +70,7 @@ class JavaSourceGenerator:
                 src += '\t{}\n'.format(self.generate_attribute(vp_attr))
 
         # constructor
-        init_args = [(get_ty(attr), attr.name) for attr in vp_class.attributes if is_uninitialized(attr)]
+        init_args = [(get_attr_declare(attr), attr.name) for attr in vp_class.attributes if is_uninitialized(attr)]
 
         src += '\n'
         src += '\t{} {}({}) {{\n'.format(VIS_PUBLIC, vp_class.name, ', '.join(map(lambda t: '%s %s' % t, init_args)))
@@ -76,7 +78,7 @@ class JavaSourceGenerator:
             src += '\t\tthis.{n} = {n};\n'.format(n=init_arg_name)
 
         for own_attr in filter(lambda a: not a.kind.is_plain_association(), vp_class.attributes):
-            src += '\t\tthis.{} = {};\n'.format(own_attr.name, get_initialize(own_attr))
+            src += '\t\tthis.{} = {};\n'.format(own_attr.name, get_attr_initialize(own_attr))
 
         src += '\t}\n'
 
@@ -122,23 +124,23 @@ class JavaSourceGenerator:
 
     def generate_attribute(self, vp_attr):
         vis = get_visibility(vp_attr, default=VIS_PRIVATE)
-        name, ty = vp_attr.name, get_ty(vp_attr)
+        name, ty = vp_attr.name, get_attr_declare(vp_attr)
         return "{} {} {};".format(vis, ty, name)
 
     def generate_operation(self, vp_operation, body='{}'):
         vis = get_visibility(vp_operation, default=VIS_PUBLIC)
-        name, ret = vp_operation.name, map_type(vp_operation.ret)
+        name, ret = vp_operation.name, get_ty_return(vp_operation.ret)
 
-        def to_ty_name(slot):
-            return slot if isinstance(slot, str) else slot.name()
+        params = ', '.join(map(lambda p: '{} {}'.format(get_ty_declare(p[1]), p[0]), vp_operation.params))
 
-        params = ', '.join(map(lambda p: '{} {}'.format(to_ty_name(p[1]), p[0]), vp_operation.params))
-        return "{} {} {}({}) {}".format(vis, ret, name, params, body)
+        return '{} {} {}({}) {}'.format(vis, ret, name, params, body)
 
 
-def map_type(ty):
+# if there is no return type -> return `void` as default
+def get_ty_return(ty):
     if ty is None:
         return 'void'
+
     return ty
 
 
@@ -158,25 +160,49 @@ def get_visibility(item, default=''):
 
 
 def is_uninitialized(vp_attr):
-    return get_visibility(vp_attr) == VIS_PRIVATE and get_initialize(vp_attr) is None and vp_attr.kind.is_plain_association()
+    return get_visibility(vp_attr) == VIS_PRIVATE and get_attr_initialize(vp_attr) is None and vp_attr.kind.is_plain_association()
 
 
-def get_initialize(vp_attr):
+# initialize a class attribute. recognizes multiplicity.
+def get_attr_initialize(vp_attr):
     if vp_attr.init is not None:
         return vp_attr.init.name()
+
     if vp_attr.mul is not None and vp_attr.mul.max != 1:
         if vp_attr.mul.max == '*':
             return 'new ArrayList<>()'
-        return 'new {}[{}]'.format(vp_attr.get_ty_name(), vp_attr.mul.max)
-    return 'new {}()'.format(vp_attr.get_ty_name())
+        return 'new {}[{}]'.format(get_ty_initialize(vp_attr.ty), vp_attr.mul.max)
+
+    return 'new {}()'.format(get_ty_initialize(vp_attr.ty))
 
 
-def get_ty(vp_attr):
+# translate a class attribute to java code. recognizes multiplicity.
+def get_attr_declare(vp_attr):
     if vp_attr.ty is None:
         return ''
-    tys = vp_attr.get_ty_name()
+
+    ty_sig = get_ty_declare(vp_attr.ty)
+
+    # check if we are talking about multiple types here
     if vp_attr.mul is not None and vp_attr.mul.max != 1:
+        # variable amount of objects -> list
         if vp_attr.mul.max == '*':
-            return 'List<{}>'.format(tys)
-        return '{}[]'.format(tys)
-    return tys
+            return 'List<{}>'.format(ty_sig)
+
+        # fix amount of objects -> array
+        return '{}[]'.format(ty_sig)
+
+    return ty_sig
+
+
+def get_ty_initialize(vp_type):
+    return get_ty_declare(vp_type)
+
+
+# takes a vp_type and makes it useable for declaration
+def get_ty_declare(vp_type):
+    # generate generic type declaration. supports recursive resolve.
+    if vp_type.attrs:
+        return '{}<{}>'.format(vp_type.name, ', '.join(map(get_ty_declare, vp_type.attrs)))
+
+    return vp_type.name

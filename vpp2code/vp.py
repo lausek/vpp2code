@@ -6,8 +6,9 @@ def unquote(t):
     return t.strip()[1:-1]
 
 
-def to_attr_name(t):
-    return t[0].lower() + t[1:]
+# used by associations to create class attributes from a type name
+def to_property_name(vp_type):
+    return vp_type.name[0].lower() + vp_type.name[1:]
 
 
 class VpClass:
@@ -48,6 +49,12 @@ class VpRealization:
         self.end = end
 
 
+class VpType:
+    def __init__(self, name, attrs=None):
+        self.name = name
+        self.attrs = [] if not attrs else attrs
+
+
 class VpAttribute:
     def __init__(self, vis=None, name=None, ty=None, init=None, mul=None, kind=None):
         self.vis = vis
@@ -57,9 +64,6 @@ class VpAttribute:
         self.mul = mul
 
         self.kind = VpAggregationKind(None) if kind is None else kind
-
-    def get_ty_name(self):
-        return self.ty if isinstance(self.ty, str) else self.ty.name()
 
 
 class VpOperation:
