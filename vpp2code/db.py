@@ -121,7 +121,7 @@ class Database:
             SELECT id, model_type, name, definition
             FROM model_element
             WHERE id = '{}'
-            AND model_type IN ('Generalization')
+            AND model_type IN ('Generalization', 'Realization')
             """.format(model_id)
         )
         return ((row[0], row[1], row[2], self.to_def(row[3])) for row in cur.fetchall())

@@ -42,6 +42,12 @@ class VpGeneralization:
         self.end = end
 
 
+class VpRealization:
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+
 class VpAttribute:
     def __init__(self, vis=None, name=None, ty=None, init=None, mul=None, kind=None):
         self.vis = vis

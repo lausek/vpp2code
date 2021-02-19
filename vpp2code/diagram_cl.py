@@ -31,12 +31,17 @@ def read_classes(db, args, class_diagrams):
                 mobj = parse(mdef, mname, class_package)
                 items[mid] = mobj
 
-            # connections: generalization
+            # connections: generalization, realization
             for mid, mty, mname, mdef in db.get_connections(model_id):
                 mobj = parse(mdef, mname, class_package)
                 
                 logging.info('%s -> %s', mobj.end.name(), mobj.start.name())
-                items[mobj.end.mid()].set_parent(mobj.start.name())
+
+                if mty == 'Generalization':
+                    items[mobj.end.mid()].set_parent(mobj.start.name())
+
+                if mty == 'Realization':
+                    items[mobj.end.mid()].interfaces.append(mobj.start.name())
 
     return items
 
@@ -49,6 +54,11 @@ def parse(mdef, mname=None, package=None):
         start = mdef.get('fromModel')
         end = mdef.get('toModel')
         return VpGeneralization(start, end)
+
+    if mdef.ty == 'Realization':
+        start = mdef.get('fromModel')
+        end = mdef.get('toModel')
+        return VpRealization(start, end)
 
     raise Exception('cannot parse type `{}`'.format(mdef.ty))
 
