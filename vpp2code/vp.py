@@ -51,6 +51,8 @@ class VpRealization:
 
 class VpType:
     def __init__(self, name, attrs=None):
+        assert name
+
         self.name = name
         self.attrs = [] if not attrs else attrs
 

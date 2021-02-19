@@ -111,10 +111,10 @@ def parse_class(mdef, mname=None, package=None):
 
             if item.ty == 'Operation':
                 op = VpOperation()
-                # TODO: where is the return type??
 
                 op.name = item.name
                 op.vis = item.get('visibility')
+                op.ret = determine_return_type(item)
 
                 def create_param(param):
                     return param.name, determine_type(param)
@@ -128,15 +128,18 @@ def parse_class(mdef, mname=None, package=None):
     return obj
 
 
-def determine_type(item):
-    def ref_to_trivial_name(item):
-        return item.name()
+def ref_to_trivial_name(item):
+    return item.name()
 
-    ty_name = item.get('type', ref_to_trivial_name)
+
+# this function is reused for return types which are listed in different model attributes
+# see `determine_return_type`
+def determine_type(item, ty_attr_name='type', ty_attr_name_simple='type_string'):
+    ty_name = item.get(ty_attr_name, ref_to_trivial_name)
 
     # if the specified type has no reference in this diagram, try to get raw name
     if not ty_name:
-        ty_name = item.get('type_string', unquote)
+        ty_name = item.get(ty_attr_name_simple, unquote)
     
     # if the type is generic, read type attributes
     generic_info = item.get('templateTypeBindInfo')
@@ -156,4 +159,12 @@ def determine_type(item):
 
         return VpType(ty_name, attrs=type_attrs)
 
-    return VpType(ty_name)
+    if ty_name:
+        return VpType(ty_name)
+
+    return None
+
+
+def determine_return_type(item):
+    return determine_type(item, ty_attr_name='returnType', ty_attr_name_simple='returnType_string')
+

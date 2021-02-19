@@ -141,7 +141,7 @@ def get_ty_return(ty):
     if ty is None:
         return 'void'
 
-    return ty
+    return get_ty_declare(ty)
 
 
 def get_visibility(item, default=''):
